@@ -1,6 +1,10 @@
-using System.Threading.Channels;
+using System.Text;
+using Allard.Eventing.Abstractions;
 using Allard.Eventing.Dispatcher;
 using Allard.Eventing.TestApp;
+using static System.TimeSpan;
+using static Allard.Eventing.Abstractions.MessageEnvelopeBuilder;
+using static Allard.Eventing.Abstractions.SubscriptionBuilder;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -11,44 +15,64 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
+
 // host.Run();
-var dispatcher = host.Services.GetRequiredService<MessageDispatcher>();
+var dispatcher = host
+    .Services
+    .GetRequiredService<MessageDispatcher>();
+
+await dispatcher
+    .Subscribe(
+        CreateSubscription("test1")
+            .AddMessageType("a")
+            .SetHandler(c =>
+            {
+                Console.WriteLine("received: " + Encoding.UTF8.GetString(c.Current.Message.Body));
+                Thread.Sleep(2_000);
+                return Task.CompletedTask;
+            })
+            .Build());
+
+await dispatcher
+    .Subscribe(
+        CreateSubscription("test1")
+            .AddMessageType("a")
+            .SetHandler(c =>
+            {
+                Console.WriteLine("commitable 2: " + Encoding.UTF8.GetString(c.Current.Message.Body));
+                return Task.CompletedTask;
+            })
+            .AddTrigger(new TimeOrCountTrigger(FromSeconds(10), 7), new TriggerActionCommit())
+            .Build());
+
+await dispatcher
+    .Subscribe(
+        CreateSubscription("commit")
+            .AddMessageType("dispatch::commit")
+            .SetHandler(_ =>
+            {
+                Console.WriteLine("commit");
+                return Task.CompletedTask;
+            })
+            .Build()
+    );
+
 var runner = dispatcher.Start(default);
-
-var sub = Channel.CreateUnbounded<DispatchEnvelope>(new UnboundedChannelOptions
-{
-    SingleReader = true,
-    SingleWriter = true,
-});
-
-var sub1 = new Subscription(sub,new[] { "a" });
-await dispatcher.Subscribe(sub1);
-
-while (dispatcher.SubscriptionCount != 1)
+while (dispatcher.SubscriptionCount != 3)
 {
     Thread.Sleep(10);
 }
 
-var x = Task.Run(async () =>
-{
-    Console.WriteLine("run");
-    var i = 0;
-    while (await sub1.SubscriptionChannel.Reader.WaitToReadAsync())
-    {
-        Console.WriteLine("starting inner loop");
-        while (sub1.SubscriptionChannel.Reader.TryRead(out var m))
-        {
-            Console.WriteLine("received " + i++);
-        }
-    }
-});
-
 Console.WriteLine("dispatching");
 for (var i = 0; i < 10; i++)
 {
-    await dispatcher.Dispatch(new DispatchEnvelope("a"));
-    Thread.Sleep(100);
-}
+    var message = CreateMessage("a")
+        .SetKey("key")
+        .SetMessage("hi there")
+        .SetOrigin("test", "test", 1)
+        .Build();
 
+    await dispatcher.Dispatch(message);
+}
 
 await runner;

@@ -1,12 +1,16 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
+using Allard.Eventing.Abstractions;
+using static System.TimeSpan;
 
 namespace Allard.Eventing.Dispatcher;
 
 public class MessageDispatcher
 {
-    public int SubscriptionCount => _subscriptionsPerMessageType.Sum(s => s.Value.Count);
-    private readonly ConcurrentDictionary<string, List<Subscription>> _subscriptionsPerMessageType = new();
+    public int SubscriptionCount => _subscribers.Count;
+    private readonly List<SubscriberTask> _subscribers = new();
+    private Timer? _timer;
+    private readonly ConcurrentDictionary<string, List<SubscriberTask>> _subscriptionsPerMessageType = new();
     private readonly Channel<Func<Task>> _commandChannel = Channel.CreateUnbounded<Func<Task>>(
         new UnboundedChannelOptions
         {
@@ -14,9 +18,8 @@ public class MessageDispatcher
             SingleWriter = false
         });
 
-    public async Task Dispatch(DispatchEnvelope message)
+    public async Task Dispatch(MessageEnvelope message)
     {
-        await Task.Yield();
         if (!_subscriptionsPerMessageType.TryGetValue(message.MessageType, out var subscriptions))
         {
             return;
@@ -24,7 +27,7 @@ public class MessageDispatcher
 
         foreach (var subscription in subscriptions)
         {
-            await subscription.SubscriptionChannel.Writer.WriteAsync(message);
+            await subscription.Consumer.Send(message);
         }
     }
     
@@ -34,9 +37,15 @@ public class MessageDispatcher
         {
             foreach (var messageType in subscription.MessageTypes)
             {
+                var cancellationSource = new CancellationTokenSource();
+                var consumer = new SubscriberConsumer(subscription, cancellationSource.Token);
+                var runner = consumer.Start(); 
+                var subscriberTask = new SubscriberTask(consumer, runner, cancellationSource);
+                
+                _subscribers.Add(subscriberTask);
                 _subscriptionsPerMessageType
-                    .GetOrAdd(messageType, mt => new List<Subscription>())
-                    .Add(subscription);
+                    .GetOrAdd(messageType, mt => new List<SubscriberTask>())
+                    .Add(subscriberTask);
             }
 
             return Task.CompletedTask;
@@ -44,10 +53,29 @@ public class MessageDispatcher
         return this;
     }
 
+    private readonly MessageEnvelope _wakeUp = MessageEnvelopeBuilder
+        .CreateMessage("dispatch::wakeup")
+        .SetOrigin("dispatcher", string.Empty, -1)
+        .Build();
+
+    private async Task Maintenance()
+    {
+        foreach (var subscriber in _subscribers)
+        {
+            await subscriber.Consumer.Send(_wakeUp);
+        }
+    }
+
     public async Task Start(CancellationToken stoppingToken)
     {
         try
         {
+            _timer = new Timer(async _ => await Maintenance(), 
+                null, 
+                FromMilliseconds(100), 
+                FromMilliseconds(100));
+            
+            // processes the command channel
             var reader = _commandChannel.Reader;
             while (await reader.WaitToReadAsync(stoppingToken))
             {
@@ -61,4 +89,6 @@ public class MessageDispatcher
         {
         }
     }
+    
+    private record SubscriberTask(SubscriberConsumer Consumer, Task Runner, CancellationTokenSource Stopping);
 }

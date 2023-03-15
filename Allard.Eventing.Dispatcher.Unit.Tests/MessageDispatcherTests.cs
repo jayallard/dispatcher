@@ -1,5 +1,5 @@
-﻿using FluentAssertions;
-using static Allard.Eventing.Dispatcher.Subscription;
+﻿using Allard.Eventing.Abstractions;
+using FluentAssertions;
 
 namespace Allard.Eventing.Dispatcher.Unit.Tests;
 
@@ -11,9 +11,15 @@ public class MessageDispatcherTests
         var cancellation = new CancellationTokenSource();
         var dispatcher = new MessageDispatcher();
         var runner = dispatcher.Start(cancellation.Token);
-        await dispatcher.Subscribe(new Subscription(SingleReaderChannel(), new[] { "a" }));
-        await dispatcher.Subscribe(new Subscription(SingleReaderChannel(), new[] { "a" }));
-        await dispatcher.Subscribe(new Subscription(SingleReaderChannel(), new[] { "a" }));
+
+        var sub = SubscriptionBuilder
+            .CreateSubscription("1")
+            .SetHandler(_ => Task.CompletedTask)
+            .AddMessageType("a");
+        
+        await dispatcher.Subscribe(sub.Build());
+        await dispatcher.Subscribe(sub.SetId("b").Build());
+        await dispatcher.Subscribe(sub.SetId("c").Build());
         while (dispatcher.SubscriptionCount < 3) Thread.Sleep(10);
         dispatcher.SubscriptionCount.Should().Be(3);
         cancellation.Cancel();

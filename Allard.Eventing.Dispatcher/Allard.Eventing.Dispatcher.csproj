@@ -1,9 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <Reference Include="Allard.Eventing.Dispatcher">
+        <HintPath>..\Allard.Eventing.Dispatcher.Unit.Tests\bin\Debug\net7.0\Allard.Eventing.Dispatcher.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Allard.Eventing.Abstractions\Allard.Eventing.Abstractions.csproj" />
+    </ItemGroup>
 
 </Project>

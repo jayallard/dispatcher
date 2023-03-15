@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Allard.Eventing.Abstractions\Allard.Eventing.Abstractions.csproj" />
       <ProjectReference Include="..\Allard.Eventing.Dispatcher\Allard.Eventing.Dispatcher.csproj" />
     </ItemGroup>
 </Project>
