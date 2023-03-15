@@ -11,7 +11,8 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services
             .AddHostedService<Worker>()
-            .AddSingleton<MessageDispatcher>();
+            .AddSingleton<MessageDispatcher>()
+            .AddSingleton<ISubscriberConsumerFactory, SubscriberConsumerFactoryDi>();
     })
     .Build();
 
@@ -27,10 +28,11 @@ await dispatcher
             .AddMessageType("a")
             .SetHandler(c =>
             {
-                Console.WriteLine("received: " + Encoding.UTF8.GetString(c.Current.Message.Body));
+                Console.WriteLine("received: " + Encoding.UTF8.GetString(c.Current?.Message.Body ?? Array.Empty<byte>()));
                 Thread.Sleep(2_000);
                 return Task.CompletedTask;
             })
+            .AddTrigger(new TimeOrCountTrigger(FromSeconds(10), 7), new TriggerActionCommit())
             .Build());
 
 await dispatcher
@@ -42,7 +44,6 @@ await dispatcher
                 Console.WriteLine("commitable 2: " + Encoding.UTF8.GetString(c.Current.Message.Body));
                 return Task.CompletedTask;
             })
-            .AddTrigger(new TimeOrCountTrigger(FromSeconds(10), 7), new TriggerActionCommit())
             .Build());
 
 await dispatcher

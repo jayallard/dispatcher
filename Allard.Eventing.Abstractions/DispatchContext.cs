@@ -7,7 +7,7 @@ public class DispatchContext
     public DateTimeOffset Started { get; } = DateTimeOffset.Now;
     public IEnumerable<MessageContext> Messages => _messages.ToArray();
     public int MessageCount => _messages.Count;
-    public MessageContext Current {get; private set; }
+    public MessageContext? Current {get; private set; }
 
     public void SetCurrent(MessageContext message)
     {

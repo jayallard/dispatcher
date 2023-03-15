@@ -28,51 +28,63 @@ public class SubscriberConsumer
         await _channel.Writer.WriteAsync(message, StoppingToken);
     }
 
+    private DispatchContext? _currentBatch;
+    
     public async Task Start()
     {
         try
         {
             // processes the command channel
             var reader = _channel.Reader;
-            var context = new DispatchContext();
             while (await reader.WaitToReadAsync(StoppingToken))
             {
                 while (reader.TryRead(out var message))
                 {
+                    _currentBatch ??= new DispatchContext();
                     if (!message.IsDispatchMessage())
                     {
                         var messageContext = new MessageContext(message);
-                        context.SetCurrent(messageContext);
-                        await Subscription.Handler(context);
+                        _currentBatch.SetCurrent(messageContext);
+                        await Subscription.Handler(_currentBatch);
                     }
-                    
-                    // process triggers
-                    foreach (var trigger in Subscription.Triggers)
-                    {
-                        var readiness = await trigger.Condition.GetReadiness(context);
-                        if (!readiness.IsReady)
-                        {
-                            continue;
-                        }
 
-                        var triggerMessage = await trigger.Action.Trigger(context);
-                        if (triggerMessage == null)
-                        {
-                            continue;
-                        }
-                        
-                        await Subscription.Handler(context);
-                        if (triggerMessage.MessageType == "dispatch::commit")
-                        {
-                            Console.WriteLine("Committed\n\tCount=" + context.MessageCount + "\n\tDuration=" + context.Started.Elapsed().TotalMilliseconds);
-                            context = new DispatchContext();
-                        }
-                    }
+                    await ProcessTriggers();
                 }
             }
         }
         catch (OperationCanceledException)
         {
+        }
+    }
+
+    private async Task ProcessTriggers()
+    {
+        if (_currentBatch == null)
+        {
+            return;
+        }
+        
+        // process triggers
+        foreach (var trigger in Subscription.Triggers)
+        {
+            var readiness = await trigger.Condition.GetReadiness(_currentBatch);
+            if (!readiness.IsReady)
+            {
+                continue;
+            }
+
+            var triggerMessage = await trigger.Action.Trigger(_currentBatch);
+            if (triggerMessage == null)
+            {
+                continue;
+            }
+                        
+            await Subscription.Handler(_currentBatch);
+            if (triggerMessage.MessageType == "dispatch::commit")
+            {
+                Console.WriteLine("Committed\n\tCount=" + _currentBatch.MessageCount + "\n\tElapsed=" + _currentBatch.Started.Elapsed().TotalMilliseconds);
+                _currentBatch = null;
+            }
         }
     }
 }
