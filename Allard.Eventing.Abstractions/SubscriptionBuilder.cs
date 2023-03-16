@@ -12,6 +12,7 @@ public class SubscriptionBuilder
     public List<Trigger> Triggers { get; } = new();
     public string Id { get; set; }
 
+    public IScopeLifetime ScopeLifetime { get; set; } = new ScopePerMessage();
     private HashSet<string> MessageTypes { get; } = new();
 
     private SubscriptionBuilder(string id)
@@ -42,6 +43,12 @@ public class SubscriptionBuilder
         Triggers.Add(new Trigger(condition, action));
         return this;
     }
+
+    public SubscriptionBuilder SetScopeLifetime(IScopeLifetime lifetime)
+    {
+        ScopeLifetime = lifetime;
+        return this;
+    }
     
     public Subscription Build()
     {
@@ -49,6 +56,7 @@ public class SubscriptionBuilder
             id: Id,
             handler: Handler,
             messageTypes: MessageTypes,
+            lifetime: ScopeLifetime,
             triggers: Triggers);
     }
 }
