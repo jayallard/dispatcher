@@ -9,7 +9,7 @@ public class TriggerActionCommit : ITriggerAction
         var message =
             MessageEnvelopeBuilder
                 .CreateMessage("dispatch::commit")
-                .SetOrigin("dispatcher", string.Empty, 0)
+                .SetOrigin("dispatch::", "dispatch::", 0)
                 .Build();
         
         Console.WriteLine("======= commit");

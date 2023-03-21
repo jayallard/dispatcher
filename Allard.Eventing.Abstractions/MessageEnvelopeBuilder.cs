@@ -39,9 +39,9 @@ public class MessageEnvelopeBuilder
         return this;
     }
 
-    public MessageEnvelopeBuilder SetOrigin(string source, string partition, long sequenceNumber)
+    public MessageEnvelopeBuilder SetOrigin(string streamId, string partitionId, long sequenceNumber)
     {
-        Origin = new MessageOrigin(source, partition, sequenceNumber);
+        Origin = new MessageOrigin(streamId, partitionId, sequenceNumber);
         return this;
     }
 
@@ -51,7 +51,7 @@ public class MessageEnvelopeBuilder
         {
             _headers.Add(headerName, new List<byte[]>());
         }
-         
+
         _headers[headerName].Add(UTF8.GetBytes(headerValue));
         return this;
     }

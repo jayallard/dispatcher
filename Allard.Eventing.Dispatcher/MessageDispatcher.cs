@@ -1,82 +1,74 @@
-﻿using System.Collections.Concurrent;
-using System.Threading.Channels;
-using Allard.Eventing.Abstractions;
-using static System.StringComparison;
-using static System.TimeSpan;
+﻿using Allard.Eventing.Abstractions;
 
 namespace Allard.Eventing.Dispatcher;
 
 public class MessageDispatcher
 {
+    private Timer _timer;
     private readonly ISubscriberConsumerFactory _subscriberConsumerFactory;
-    public int SubscriptionCount => _subscribers.Count;
-    private readonly List<SubscriberTask> _subscribers = new();
-    private Timer? _timer;
-    private readonly ConcurrentDictionary<string, List<SubscriberTask>> _subscriptionsPerMessageType = new();
-    private readonly Channel<Func<Task>> _commandChannel = Channel.CreateUnbounded<Func<Task>>(
-        new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = false
-        });
 
-    public MessageDispatcher(ISubscriberConsumerFactory subscriberConsumerFactory)
+    // initialization fields
+    private readonly Subscriber[] _subscribers;
+    private readonly Source[] _sources;
+    
+    // setup when START is called
+    private SourceTask[] _sourceTasks;
+    private SubscriberTask[] _subscriberTasks;
+    public int SubscriptionCount => _sourceTasks.Length;
+
+    public MessageDispatcher(
+        IEnumerable<Source> sources,
+        IEnumerable<Subscriber> subscribers,
+        ISubscriberConsumerFactory subscriberConsumerFactory)
     {
+        _sources = sources.ToArray();
+        _subscribers = subscribers.ToArray();
         _subscriberConsumerFactory = subscriberConsumerFactory;
     }
 
-    /// <summary>
-    /// Sends a message to relevant subscribers.
-    /// </summary>
-    /// <param name="message"></param>
-    public async Task Dispatch(MessageEnvelope message)
+    private void StartSubscribers()
     {
-        if (message.MessageType.StartsWith("dispatch::", OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Invalid message type");
-        }
-        
-        await _commandChannel.Writer.WriteAsync(async () =>
-        {
-            // get all of the subscribers for this message type
-            if (!_subscriptionsPerMessageType.TryGetValue(message.MessageType, out var subscriptions))
-            {
-                return;
-            }
-
-            // send to each subscriber
-            foreach (var subscription in subscriptions)
-            {
-                await subscription.Consumer.Send(message);
-            }
-        });
-    }
-
-    /// <summary>
-    /// Create a subscriber
-    /// </summary>
-    /// <param name="subscription"></param>
-    /// <returns></returns>
-    public async Task<MessageDispatcher> Subscribe(Subscription subscription)
-    {
-        await _commandChannel.Writer.WriteAsync(() =>
-        {
-            foreach (var messageType in subscription.MessageTypes)
+        _subscriberTasks = _subscribers
+            .Select(s =>
             {
                 var cancellationSource = new CancellationTokenSource();
-                var consumer = _subscriberConsumerFactory.Create(subscription, cancellationSource.Token);
-                var runner = consumer.Start(); 
+                var consumer = _subscriberConsumerFactory.Create(s, cancellationSource.Token);
+                var runner = consumer.Start();
                 var subscriberTask = new SubscriberTask(consumer, runner, cancellationSource);
-                
-                _subscribers.Add(subscriberTask);
-                _subscriptionsPerMessageType
-                    .GetOrAdd(messageType, mt => new List<SubscriberTask>())
-                    .Add(subscriberTask);
-            }
+                return subscriberTask;
+            })
+            .ToArray();
+    }
 
-            return Task.CompletedTask;
-        });
-        return this;
+    private async Task Dispatch(MessageEnvelope message)
+    {
+        var subscribers = _subscriberTasks
+            .Where(t => t.Consumer.Subscriber.Condition(message));
+
+        var mc = new MessageContext(message);
+        var d = new DispatchContext().SetCurrent(mc);
+        foreach (var subscriber in subscribers)
+        {
+            await subscriber.Consumer.Subscriber.Handler(d);
+        }
+    }
+
+    private void StartSources()
+    {
+        _sourceTasks = _sources
+            .Select(s =>
+            {
+                var cancel = new CancellationTokenSource();
+                var handler = new Func<MessageEnvelope, Task>(async m =>
+                {
+                    // m.SourceId = s.SourceId
+                    await Dispatch(m);
+                });
+
+                var runner = s.MessageSource.Start(handler, cancel.Token);
+                return new SourceTask(s.SourceId, runner, cancel);
+            })
+            .ToArray();
     }
 
     /// <summary>
@@ -85,44 +77,28 @@ public class MessageDispatcher
     /// </summary>
     private readonly MessageEnvelope _wakeUp = MessageEnvelopeBuilder
         .CreateMessage("dispatch::wakeup")
-        .SetOrigin("dispatcher", string.Empty, -1)
+        .SetOrigin("dispatch::", "dispatch::", 0)
         .Build();
 
     private async Task Maintenance()
     {
         foreach (var subscriber in _subscribers)
         {
-            await subscriber.Consumer.Send(_wakeUp);
+            // await subscriber.Consumer.Send(_wakeUp);
         }
     }
 
     public async Task Start(CancellationToken stoppingToken)
     {
-        try
-        {
-            // temp - this needs to be calculated. no need to fire
-            // at fixed intervals. instead, determine the next
-            // interval based on the subscriber triggers.
-            // until that is sorted out, this keeps things moving.
-            _timer = new Timer(async _ => await Maintenance(), 
-                null, 
-                FromMilliseconds(100), 
-                FromMilliseconds(100));
-            
-            // processes the command channel
-            var reader = _commandChannel.Reader;
-            while (await reader.WaitToReadAsync(stoppingToken))
-            {
-                while (reader.TryRead(out var method))
-                {
-                    await method();
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
+        StartSubscribers();
+        StartSources();
+        await Task.Yield();
+
+        // TODO: this is temp
+        stoppingToken.WaitHandle.WaitOne();
     }
-    
-    private record SubscriberTask(SubscriberConsumer Consumer, Task Runner, CancellationTokenSource Stopping);
+
+    private record SubscriberTask(SubscriberConsumer Consumer, Task Runner, CancellationTokenSource StoppingToken);
+
+    private record SourceTask(string SourceId, Task Runner, CancellationTokenSource StoppingToken);
 }

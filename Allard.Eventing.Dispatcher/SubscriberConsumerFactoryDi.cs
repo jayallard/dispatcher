@@ -12,8 +12,8 @@ public class SubscriberConsumerFactoryDi : ISubscriberConsumerFactory
         _serviceProvider = serviceProvider;
     }
 
-    public SubscriberConsumer Create(Subscription subscription, CancellationToken stoppingToken)
+    public SubscriberConsumer Create(Subscriber subscriber, CancellationToken stoppingToken)
     {
-        return ActivatorUtilities.CreateInstance<SubscriberConsumer>(_serviceProvider, subscription, stoppingToken);
+        return ActivatorUtilities.CreateInstance<SubscriberConsumer>(_serviceProvider, subscriber, stoppingToken);
     }
 }

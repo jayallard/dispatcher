@@ -6,20 +6,20 @@ namespace Allard.Eventing.Dispatcher;
 
 public class SubscriberConsumer
 {
-    public Subscription Subscription { get; }
+    public Subscriber Subscriber { get; }
     public CancellationToken StoppingToken { get; }
 
     private readonly Channel<MessageEnvelope> _channel = Channel.CreateBounded<MessageEnvelope>(
-        new BoundedChannelOptions(10_000)
+        new BoundedChannelOptions(100)
         {
             SingleReader = true,
             SingleWriter = true,
             FullMode = Wait
         });
 
-    public SubscriberConsumer(Subscription subscription, CancellationToken stoppingToken)
+    public SubscriberConsumer(Subscriber subscriber, CancellationToken stoppingToken)
     {
-        Subscription = subscription;
+        Subscriber = subscriber;
         StoppingToken = stoppingToken;
     }
 
@@ -51,7 +51,7 @@ public class SubscriberConsumer
                     {
                         var messageContext = new MessageContext(message);
                         _currentBatch.SetCurrent(messageContext);
-                        await Subscription.Handler(_currentBatch);
+                        await Subscriber.Handler(_currentBatch);
                     }
 
                     await TryCommit();
@@ -66,12 +66,12 @@ public class SubscriberConsumer
     private async Task TryCommit()
     {
         if (_currentBatch == null || _currentBatch.MessageCount == 0) return;
-        var scopeStatus = Subscription.ScopeLifetime.CheckStatus(_currentBatch);
+        var scopeStatus = Subscriber.ScopeLifetime.CheckStatus(_currentBatch);
         if (scopeStatus.IsComplete)
         {
             _currentBatch.SetCurrent(new MessageContext(_commit));
-            await Subscription.Handler(_currentBatch);
-            if (Subscription.ScopeLifetime.GetType() != typeof(ScopePerMessage))
+            await Subscriber.Handler(_currentBatch);
+            if (Subscriber.ScopeLifetime.GetType() != typeof(ScopePerMessage))
             {
                 Console.WriteLine("commit");
             }
@@ -80,35 +80,35 @@ public class SubscriberConsumer
         }
     }
 
-    private async Task ProcessTriggers()
-    {
-        if (_currentBatch == null)
-        {
-            return;
-        }
-
-        // process triggers
-        foreach (var trigger in Subscription.Triggers)
-        {
-            var readiness = await trigger.Condition.GetReadiness(_currentBatch);
-            if (!readiness.IsReady)
-            {
-                continue;
-            }
-
-            var triggerMessage = await trigger.Action.Trigger(_currentBatch);
-            if (triggerMessage == null)
-            {
-                continue;
-            }
-
-            await Subscription.Handler(_currentBatch);
-            if (triggerMessage.MessageType == "dispatch::commit")
-            {
-                Console.WriteLine("Committed\n\tCount=" + _currentBatch.MessageCount + "\n\tElapsed=" +
-                                  _currentBatch.Started.Elapsed().TotalMilliseconds);
-                _currentBatch = null;
-            }
-        }
-    }
+    // private async Task ProcessTriggers()
+    // {
+    //     if (_currentBatch == null)
+    //     {
+    //         return;
+    //     }
+    //
+    //     // process triggers
+    //     foreach (var trigger in Subscription.Triggers)
+    //     {
+    //         var readiness = await trigger.Condition.GetReadiness(_currentBatch);
+    //         if (!readiness.IsReady)
+    //         {
+    //             continue;
+    //         }
+    //
+    //         var triggerMessage = await trigger.Action.Trigger(_currentBatch);
+    //         if (triggerMessage == null)
+    //         {
+    //             continue;
+    //         }
+    //
+    //         await Subscription.Handler(_currentBatch);
+    //         if (triggerMessage.MessageType == "dispatch::commit")
+    //         {
+    //             Console.WriteLine("Committed\n\tCount=" + _currentBatch.MessageCount + "\n\tElapsed=" +
+    //                               _currentBatch.Started.Elapsed().TotalMilliseconds);
+    //             _currentBatch = null;
+    //         }
+    //     }
+    // }
 }

@@ -5,7 +5,12 @@ namespace Allard.Eventing.Abstractions;
 
 public class MessageEnvelope
 {
-    public MessageEnvelope(string messageType, byte[] key, byte[] body, MessageOrigin origin, IEnumerable<KeyValuePair<string, byte[][]>> headers)
+    public MessageEnvelope(
+        string messageType, 
+        byte[] key, 
+        byte[] body, 
+        MessageOrigin origin, 
+        IEnumerable<KeyValuePair<string, byte[][]>> headers)
     {
         // TODO: validations
         MessageType = messageType;
@@ -15,6 +20,7 @@ public class MessageEnvelope
         Headers = headers.ToImmutableDictionary(OrdinalIgnoreCase);
     }
 
+    public string SourceId { get; internal set; }
     public MessageOrigin Origin { get; }
     public string MessageType { get; }
     public byte[] Key { get; }
