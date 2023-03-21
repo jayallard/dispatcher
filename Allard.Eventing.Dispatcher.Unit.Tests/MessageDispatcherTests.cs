@@ -20,6 +20,7 @@ public class MessageDispatcherTests
         var di = new ServiceCollection().BuildServiceProvider();
         var factory = new SubscriberConsumerFactoryDi(di);
         var source1 = new DirectSource();
+        var source2 = new DirectSource();
         var received1 = 0;
         var received2 = 0;
 
@@ -39,13 +40,18 @@ public class MessageDispatcherTests
                 .SetCondition(m => m.MessageType == "b")
                 .SetHandler(_ =>
                 {
+                    Thread.Sleep(100);
                     received2++;
                     return Task.CompletedTask;
                 })
                 .Build();
 
         var dispatcher = new MessageDispatcher(
-            new[] { new Source("direct", source1) },
+            new[]
+            {
+                new Source("direct", source1),
+                new Source("direct2", source2)
+            },
             new[] { sub1, sub2 },
             factory);
 
@@ -60,13 +66,24 @@ public class MessageDispatcherTests
         var message2 = MessageEnvelopeBuilder
             .CreateMessage("b")
             .Build();
-        
-        while (!stopper.IsCancellationRequested)
-        {
-            await source1.Write(message1);
-            await source1.Write(message2);
-        }
 
+        var taskA = Task.Run(async () =>
+        {
+            while (!stopper.IsCancellationRequested)
+            {
+                await source1.Write(message1);
+            }
+        });
+        
+        var taskB = Task.Run(async () =>
+        {
+            while (!stopper.IsCancellationRequested)
+            {
+                await source2.Write(message2);
+            }
+        });
+        
+        await Task.WhenAll(taskA, taskB);
         await runner;
         _testOutputHelper.WriteLine("Received 1: " + received1);
         _testOutputHelper.WriteLine("Received 2: " + received2);

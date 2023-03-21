@@ -40,19 +40,6 @@ public class MessageDispatcher
             .ToArray();
     }
 
-    private async Task Dispatch(MessageEnvelope message)
-    {
-        var subscribers = _subscriberTasks
-            .Where(t => t.Consumer.Subscriber.Condition(message));
-
-        var mc = new MessageContext(message);
-        var d = new DispatchContext().SetCurrent(mc);
-        foreach (var subscriber in subscribers)
-        {
-            await subscriber.Consumer.Subscriber.Handler(d);
-        }
-    }
-
     private void StartSources()
     {
         _sourceTasks = _sources
@@ -69,6 +56,16 @@ public class MessageDispatcher
                 return new SourceTask(s.SourceId, runner, cancel);
             })
             .ToArray();
+    }
+
+    private async Task Dispatch(MessageEnvelope message)
+    {
+        var subscribers = _subscriberTasks
+            .Where(t => t.Consumer.Subscriber.Condition(message));
+        foreach (var subscriber in subscribers)
+        {
+            await subscriber.Consumer.Send(message);
+        }
     }
 
     /// <summary>
