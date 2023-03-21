@@ -26,16 +26,16 @@ public class ScopeMaxCountOrDuration : IScopeLifetime
     public TimeSpan MaxDuration { get; }
     public int MaxCount { get; }
 
-    public ScopeMaxCountOrDuration(TimeSpan maxDuration, int maxCount)
+    public ScopeMaxCountOrDuration( int maxCount, TimeSpan maxDuration)
     {
-        MaxDuration = maxDuration;
         MaxCount = maxCount;
+        MaxDuration = maxDuration;
     }
 
     public ScopeStatus CheckStatus(DispatchContext context)
     {
-        var result = context.Started.Elapsed() >= MaxDuration
-                     || context.MessageCount >= MaxCount;
+        var result = context.MessageCount >= MaxCount
+        || context.Started.Elapsed() >= MaxDuration;
         return new ScopeStatus(result);
     }
 }

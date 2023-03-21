@@ -63,6 +63,8 @@ public class SubscriberConsumer
         }
     }
 
+    public static int CommitCount;
+
     private async Task TryCommit()
     {
         if (_currentBatch == null || _currentBatch.MessageCount == 0) return;
@@ -73,7 +75,8 @@ public class SubscriberConsumer
             await Subscriber.Handler(_currentBatch);
             if (Subscriber.ScopeLifetime.GetType() != typeof(ScopePerMessage))
             {
-                Console.WriteLine("commit");
+                // Console.WriteLine("commit");
+                CommitCount++;
             }
 
             _currentBatch = null;

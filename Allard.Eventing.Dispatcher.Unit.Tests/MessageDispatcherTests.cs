@@ -27,9 +27,14 @@ public class MessageDispatcherTests
         var sub1 = SubscriberBuilder
             .CreateSubscription("test1")
             .SetCondition(m => m.MessageType == "a")
-            .SetHandler(_ =>
+            .SetScopeLifetime(new ScopeMaxCountOrDuration( 10_000, FromSeconds(1)))
+            .SetHandler(m =>
             {
-                received1++;
+                if (!m.Current.Message.IsDispatchMessage())
+                {
+                    received1++;
+                }
+
                 return Task.CompletedTask;
             })
             .Build();
@@ -38,10 +43,14 @@ public class MessageDispatcherTests
             SubscriberBuilder
                 .CreateSubscription("test2")
                 .SetCondition(m => m.MessageType == "b")
-                .SetHandler(_ =>
+                .SetHandler(m =>
                 {
-                    Thread.Sleep(100);
-                    received2++;
+                    // Thread.Sleep(100);
+                    if (!m.Current.Message.IsDispatchMessage())
+                    {
+                        received2++;
+                    }
+
                     return Task.CompletedTask;
                 })
                 .Build();
@@ -87,5 +96,6 @@ public class MessageDispatcherTests
         await runner;
         _testOutputHelper.WriteLine("Received 1: " + received1);
         _testOutputHelper.WriteLine("Received 2: " + received2);
+        _testOutputHelper.WriteLine("Commits: " + SubscriberConsumer.CommitCount);
     }
 }

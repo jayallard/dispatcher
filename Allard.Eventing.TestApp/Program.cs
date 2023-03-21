@@ -26,7 +26,7 @@ var dispatcher = host
 var received = new CountdownEvent(10_000);
 var subscriber = SubscriberBuilder
     .CreateSubscription("test")
-    .SetScopeLifetime(new ScopeMaxCountOrDuration(FromSeconds(10), 7))
+    .SetScopeLifetime(new ScopeMaxCountOrDuration(7, FromSeconds(10)))
     .SetCondition(m => m.MessageType == "a")
     .SetHandler(c =>
     {
