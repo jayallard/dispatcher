@@ -6,7 +6,6 @@ public class Subscriber
 {
     public Func<DispatchContext, Task> Handler { get; }
     public string Id { get; }
-    // public ImmutableArray<Trigger> Triggers { get; }
     public IScopeLifetime ScopeLifetime { get; }
     public Func<MessageEnvelope, bool> Condition { get; }
 
@@ -18,7 +17,6 @@ public class Subscriber
     {
         Id = id;
         Handler = handler;
-        // Triggers = triggers.ToImmutableArray();
         ScopeLifetime = lifetime;
         Condition = condition;
     }

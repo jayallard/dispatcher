@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Threading.Channels;
+using Allard.Eventing.Abstractions;
+using FluentAssertions;
 
 namespace Allard.Eventing.Dispatcher.Unit.Tests;
 
@@ -24,7 +26,42 @@ public class Demo
     }
 
     [Fact]
-    public void Dispatch()
+    public void InterlockedCompareExchange()
     {
+        var x = 0;
+        var original = Interlocked.CompareExchange(ref x, 1, 0);
+        original.Should().Be(0);
+
+        var next = Interlocked.CompareExchange(ref x, 1, 0);
+        next.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Junk()
+    {
+        var source = Channel.CreateBounded<string>(10);
+        var target = Channel.CreateBounded<string>(5);
+        for (var i = 0; i < 10; i++)
+        {
+            await source.Writer.WriteAsync(i.ToString());
+        }
+    }
+
+    /// <summary>
+    /// demonstrating how the reset event works... just making
+    /// sure that calling SET when already SET isn't a
+    /// problem
+    /// </summary>
+    [Fact]
+    public void Reset()
+    {
+        var evt = new ManualResetEventSlim();
+        evt.IsSet.Should().BeFalse();
+        evt.Set();
+        evt.Set();
+        evt.Set();
+        evt.IsSet.Should().BeTrue();
+        evt.Reset();
+        evt.IsSet.Should().BeFalse();
     }
 }

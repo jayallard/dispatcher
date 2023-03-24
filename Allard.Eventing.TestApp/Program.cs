@@ -1,83 +1,68 @@
 using System.Diagnostics;
-using System.Text;
 using Allard.Eventing.Abstractions;
 using Allard.Eventing.Dispatcher;
-using Allard.Eventing.TestApp;
 using static System.TimeSpan;
 using static Allard.Eventing.Abstractions.MessageEnvelopeBuilder;
 using static Allard.Eventing.Abstractions.SubscriberBuilder;
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
-    {
-        services
-            .AddHostedService<Worker>()
-            .AddSingleton<MessageDispatcher>()
-            .AddSingleton<ISubscriberConsumerFactory, SubscriberConsumerFactoryDi>();
-    })
-    .Build();
-
-
-// host.Run();
-var dispatcher = host
-    .Services
-    .GetRequiredService<MessageDispatcher>();
-
-var received = new CountdownEvent(10_000);
-var subscriber = SubscriberBuilder
-    .CreateSubscription("test")
+// var host = Host.CreateDefaultBuilder(args)
+//     .ConfigureServices(services =>
+//     {
+//         services
+//             .AddHostedService<Worker>()
+//             .AddSingleton<MessageDispatcher>()
+//             .AddSingleton<ISubscriberConsumerFactory, SubscriberConsumerFactoryDi>();
+//     })
+//     .Build();
+const int sendCount = 10_000_000;
+var counter = new CountdownEvent(sendCount);
+var sub1 = CreateSubscription("test")
     .SetScopeLifetime(new ScopeMaxCountOrDuration(7, FromSeconds(10)))
     .SetCondition(m => m.MessageType == "a")
     .SetHandler(c =>
     {
         if (!c.Current.Message.IsDispatchMessage())
         {
-            received.Signal();
+            counter.Signal();
         }
 
-        Console.WriteLine(
-            "sleeper received: " + Encoding.UTF8.GetString(c.Current?.Message.Body ?? Array.Empty<byte>()));
-        // Console.WriteLine("\t\t" + received.CurrentCount);
-        Thread.Sleep(2_000);
         return Task.CompletedTask;
     })
     .Build();
 
-
-var runner = dispatcher.Start(default);
-Console.WriteLine("Waiting for subscriptions");
-while (dispatcher.SubscriptionCount != 2)
+var sources = new[]
 {
-    Thread.Sleep(10);
-}
+    new DirectSource2()
+};
 
-Console.WriteLine("dispatching");
 var messageA = CreateMessage("a")
     .SetKey("key")
     .SetMessage("hi there")
     .SetOrigin("test", "test", 1)
     .Build();
-var messageB = CreateMessage("b")
-    .SetKey("key")
-    .SetMessage("hi there")
-    .SetOrigin("test", "test", 1)
-    .Build();
 
-// var watch = Stopwatch.StartNew();
-// for (var i = 0; i < 10_000; i++)
-// {
-//     await dispatcher.Dispatch(messageA);
-//     await dispatcher.Dispatch(messageB);
-// }
-// received.Wait();
-// watch.Stop();
-// Console.WriteLine("ELAPSED: " + watch.ElapsedMilliseconds);
+var writeWatch = Stopwatch.StartNew();
+for (var i = 0; i < sendCount; i++)
+{
+    sources[0].Send(messageA);
+}
+writeWatch.Stop();
 
 
+var cancellationSource = new CancellationTokenSource();
+var subscribers = new[] { sub1 };
+var dispatcher = new MessageDispatcher2(sources, subscribers);
+
+var readWatch = Stopwatch.StartNew();
+var runner = dispatcher.Start(cancellationSource.Token);
+while (!counter.IsSet)
+{
+    Console.WriteLine(counter.CurrentCount);
+    Thread.Sleep(1_000);
+}
+counter.Wait();
+readWatch.Stop();
+
+Console.WriteLine("Write Time: " + writeWatch.ElapsedMilliseconds.ToString("#,###"));
+Console.WriteLine("Read Time: " + readWatch.ElapsedMilliseconds.ToString("#,###"));
 await runner;
-
-/*
- *  var pipeLine = PipeLineBuilder
- *      .PartitionByStream()
- *      .PartitionBy 
-*/
