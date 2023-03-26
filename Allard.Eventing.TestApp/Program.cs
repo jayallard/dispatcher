@@ -32,7 +32,7 @@ var sub1 = CreateSubscription("test")
 
 var sources = new[]
 {
-    new DirectSource2()
+    new DirectSource()
 };
 
 var messageA = CreateMessage("a")
@@ -51,7 +51,7 @@ writeWatch.Stop();
 
 var cancellationSource = new CancellationTokenSource();
 var subscribers = new[] { sub1 };
-var dispatcher = new MessageDispatcher2(sources, subscribers);
+var dispatcher = new MessageDispatcher(sources, subscribers);
 
 var readWatch = Stopwatch.StartNew();
 var runner = dispatcher.Start(cancellationSource.Token);

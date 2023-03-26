@@ -2,14 +2,14 @@
 
 namespace Allard.Eventing.Dispatcher;
 
-public class MessageDispatcher2
+public class MessageDispatcher
 {
     private readonly ISource2[] _sources;
     private readonly Subscriber[] _subscribers;
     private readonly Buffers _buffers;
     private SourceTask[]? _sourceTasks;
 
-    public MessageDispatcher2(
+    public MessageDispatcher(
         IEnumerable<ISource2> sources,
         IEnumerable<Subscriber> subscribers)
     {
@@ -20,10 +20,10 @@ public class MessageDispatcher2
 
     private Task Process(MessageContext mc)
     {
-        // var subscribers = _subscribers
-        //     .Where(s => s.Condition(mc.Message))
-        //     .ToArray();
-        foreach (var sub in _subscribers)
+        var subscribers = _subscribers
+            .Where(s => s.Condition(mc.Message))
+            .ToArray();
+        foreach (var sub in subscribers)
         {
             var dc = new DispatchContext();
             dc.SetCurrent(mc);

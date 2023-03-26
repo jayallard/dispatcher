@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Allard.Eventing.Dispatcher.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Allard.Eventing.Abstractions", "Allard.Eventing.Abstractions\Allard.Eventing.Abstractions.csproj", "{BCBB027B-8479-4FBB-A109-FDD768301450}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Allard.Eventing.Benchmarks", "Allard.Eventing.Benchmarks\Allard.Eventing.Benchmarks.csproj", "{F1016622-A3ED-4E66-BFAF-173090BCB66C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{BCBB027B-8479-4FBB-A109-FDD768301450}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCBB027B-8479-4FBB-A109-FDD768301450}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCBB027B-8479-4FBB-A109-FDD768301450}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1016622-A3ED-4E66-BFAF-173090BCB66C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1016622-A3ED-4E66-BFAF-173090BCB66C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1016622-A3ED-4E66-BFAF-173090BCB66C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1016622-A3ED-4E66-BFAF-173090BCB66C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E663E2B8-084F-41CA-AC23-0FC4881E00B3} = {D3D66966-D3EA-45CC-B7B6-79C6E51D1D0A}

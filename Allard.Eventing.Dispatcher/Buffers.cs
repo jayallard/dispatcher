@@ -6,7 +6,7 @@ namespace Allard.Eventing.Dispatcher;
 public class Buffers
 {
     private readonly ConcurrentDictionary<PrimaryPartitionKey, Lazy<MessageBufferTask>> _buffers = new();
-    public readonly Func<MessageContext, Task> _handler;
+    private readonly Func<MessageContext, Task> _handler;
 
     public Buffers(Func<MessageContext, Task> handler)
     {

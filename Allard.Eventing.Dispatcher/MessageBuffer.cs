@@ -9,8 +9,8 @@ public class MessageBuffer
     private readonly ConcurrentQueue<MessageContext> _messages = new();
     private readonly ManualResetEventSlim _blocker = new();
 
-    public int Capacity { get; } = 100;
-    
+    public int Capacity => 100;
+
     public bool Full => _messages.Count >= Capacity;
 
     public bool HasMessages => _messages.Count > 0;
@@ -39,11 +39,6 @@ public class MessageBuffer
                 if (_messages.TryDequeue(out var message))
                 {
                     await _handler(message);
-                    // Count++;
-                    // if (Count % 500_000 == 0)
-                    // {
-                    //     Console.WriteLine("\t" + Count);
-                    // }
                     continue;
                 }
 
