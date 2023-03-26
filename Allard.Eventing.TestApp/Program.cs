@@ -17,9 +17,14 @@ var sources = new[]
 {
     new MessageSource(
         "uno", 
-        mc =>
+        _ =>
         {
             counter.Signal();
+            // if (counter.CurrentCount % 100_000 == 0)
+            // {
+            //     Console.WriteLine(counter.CurrentCount);
+            // }
+
             return Task.CompletedTask;
         }, 
         new DirectSource())

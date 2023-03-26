@@ -35,7 +35,8 @@ public class SourceReader
                     message.SourceId,
                     message.Origin.StreamId,
                     message.Origin.PartitionId);
-                _buffers.GetBuffer(pk).Add(new MessageContext(message));
+                var buffer = _buffers.GetBuffer(pk);
+                buffer.Add(new MessageContext(message));
             }
         }
     }
