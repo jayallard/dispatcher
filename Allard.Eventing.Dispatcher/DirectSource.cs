@@ -3,7 +3,7 @@ using Allard.Eventing.Abstractions;
 
 namespace Allard.Eventing.Dispatcher;
 
-public class DirectSource : ISource2
+public class DirectSource : ISource
 {
     private readonly ConcurrentQueue<MessageEnvelope> _messages = new();
 

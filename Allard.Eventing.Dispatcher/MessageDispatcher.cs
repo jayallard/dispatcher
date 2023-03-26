@@ -1,36 +1,14 @@
-﻿using Allard.Eventing.Abstractions;
-
-namespace Allard.Eventing.Dispatcher;
+﻿namespace Allard.Eventing.Dispatcher;
 
 public class MessageDispatcher
 {
-    private readonly ISource2[] _sources;
-    private readonly Subscriber[] _subscribers;
-    private readonly Buffers _buffers;
-    private SourceTask[]? _sourceTasks;
+    private readonly MessageSource[] _sources;
+    private SourceReaderTask[]? _readers;
 
     public MessageDispatcher(
-        IEnumerable<ISource2> sources,
-        IEnumerable<Subscriber> subscribers)
+        IEnumerable<MessageSource> sources)
     {
         _sources = sources.ToArray();
-        _subscribers = subscribers.ToArray();
-        _buffers = new Buffers(Process);
-    }
-
-    private Task Process(MessageContext mc)
-    {
-        var subscribers = _subscribers
-            .Where(s => s.Condition(mc.Message))
-            .ToArray();
-        foreach (var sub in subscribers)
-        {
-            var dc = new DispatchContext();
-            dc.SetCurrent(mc);
-            sub.Handler(dc);
-        }
-
-        return Task.CompletedTask;
     }
 
     private readonly Starter _starter = new();
@@ -40,16 +18,16 @@ public class MessageDispatcher
         _starter.Start();
         await Task.Yield();
 
-        _sourceTasks = _sources
+        _readers = _sources
             .Select(s =>
             {
-                var reader = new SourceReader(s, _buffers);
+                var reader = new SourceReader(s);
                 var cancellation = new CancellationTokenSource();
                 var runner = reader.Start(cancellation.Token);
-                return new SourceTask(runner, cancellation);
+                return new SourceReaderTask(reader, runner, cancellation);
             })
             .ToArray();
 
-        await Task.WhenAll(_sourceTasks.Select(s => s.Runner));
+        await Task.WhenAll(_readers.Select(s => s.Runner));
     }
 }

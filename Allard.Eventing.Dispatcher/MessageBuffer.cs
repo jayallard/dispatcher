@@ -5,17 +5,17 @@ namespace Allard.Eventing.Dispatcher;
 
 public class MessageBuffer
 {
-    private readonly Func<MessageContext, Task> _handler;
+    private readonly ISourceHandler _handler;
     private readonly ConcurrentQueue<MessageContext> _messages = new();
     private readonly ManualResetEventSlim _blocker = new();
 
     public int Capacity => 100;
 
-    public bool Full => _messages.Count >= Capacity;
+    public bool IsFull => _messages.Count >= Capacity;
 
     public bool HasMessages => _messages.Count > 0;
 
-    public MessageBuffer(Func<MessageContext, Task> handler)
+    public MessageBuffer(ISourceHandler handler)
     {
         _handler = handler;
     }
@@ -38,7 +38,7 @@ public class MessageBuffer
             {
                 if (_messages.TryDequeue(out var message))
                 {
-                    await _handler(message);
+                    await _handler.Handle(message, stoppingToken);
                     continue;
                 }
 

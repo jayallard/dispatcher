@@ -1,5 +1,6 @@
 ﻿namespace Allard.Eventing.Dispatcher;
 
-public record SourceTask(
+public record SourceReaderTask(
+    SourceReader Reader,
     Task Runner,
     CancellationTokenSource CancellationTokenSource);

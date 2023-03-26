@@ -3,23 +3,24 @@ using Allard.Eventing.Abstractions;
 
 namespace Allard.Eventing.Dispatcher;
 
-public class Buffers
+public class SourceBuffers
 {
-    private readonly ConcurrentDictionary<PrimaryPartitionKey, Lazy<MessageBufferTask>> _buffers = new();
-    private readonly Func<MessageContext, Task> _handler;
+    private readonly ConcurrentDictionary<SourcePartitionKey, Lazy<MessageBufferTask>> _buffers = new();
+    private readonly MessageSource _source;
 
-    public Buffers(Func<MessageContext, Task> handler)
+    public SourceBuffers(MessageSource source)
     {
-        _handler = handler;
+        _source = source;
     }
 
-    public MessageBuffer GetBuffer(PrimaryPartitionKey key)
+    public MessageBuffer GetBuffer(SourcePartitionKey key)
     {
         return _buffers.GetOrAdd(key, k =>
         {
             return new Lazy<MessageBufferTask>(() =>
             {
-                var buffer = new MessageBuffer(_handler);
+                var handler = _source.Handler.CreateHandler(key);
+                var buffer = new MessageBuffer(handler);
                 var cancellationSource = new CancellationTokenSource();
                 var runner = buffer.Start(cancellationSource.Token);
                 var task = new MessageBufferTask(buffer, runner, cancellationSource);
