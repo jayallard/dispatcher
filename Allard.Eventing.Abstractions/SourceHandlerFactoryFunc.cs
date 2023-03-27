@@ -2,14 +2,14 @@
 
 public class SourceHandlerFactoryFunc : ISourceHandlerFactory
 {
-    private readonly Func<SourcePartitionKey, ISourceHandler> _func;
+    private readonly Func<string, ISourceHandler> _func;
 
-    public SourceHandlerFactoryFunc(Func<SourcePartitionKey, ISourceHandler> func)
+    public SourceHandlerFactoryFunc(Func<string, ISourceHandler> func)
     {
         _func = func;
     }
 
-    public ISourceHandler CreateHandler(SourcePartitionKey key)
+    public ISourceHandler CreateHandler(string key)
     {
         return _func(key);
     }

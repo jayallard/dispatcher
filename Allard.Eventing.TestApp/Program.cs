@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Allard.Eventing.Abstractions;
 using Allard.Eventing.Dispatcher;
 using static Allard.Eventing.Abstractions.MessageEnvelopeBuilder;
 
@@ -27,7 +28,8 @@ var sources = new[]
 
             return Task.CompletedTask;
         }, 
-        new DirectSource())
+        new DirectSource(),
+        new SourcePartitionByStream())
 };
 
 var messageA = CreateMessage("a")

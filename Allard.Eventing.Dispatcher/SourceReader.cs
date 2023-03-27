@@ -31,11 +31,8 @@ public class SourceReader
                     continue;
                 }
 
-                var pk = new SourcePartitionKey(
-                    message.SourceId,
-                    message.Origin.StreamId,
-                    message.Origin.PartitionId);
-                var buffer = _buffers.GetBuffer(pk);
+                var key = _source.Partitioner.GetSourcePartitionKey(message);
+                var buffer = _buffers.GetBuffer(key);
                 buffer.Add(new MessageContext(message));
             }
         }

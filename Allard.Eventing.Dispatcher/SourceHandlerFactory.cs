@@ -4,7 +4,7 @@ namespace Allard.Eventing.Dispatcher;
 
 public class SourceHandlerFactory : ISourceHandlerFactory
 {
-    public ISourceHandler CreateHandler(SourcePartitionKey key)
+    public ISourceHandler CreateHandler(string key)
     {
         return new DispatchSourceHandler();
     }

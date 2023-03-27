@@ -5,7 +5,7 @@ namespace Allard.Eventing.Dispatcher;
 
 public class SourceBuffers
 {
-    private readonly ConcurrentDictionary<SourcePartitionKey, Lazy<MessageBufferTask>> _buffers = new();
+    private readonly ConcurrentDictionary<string, Lazy<MessageBufferTask>> _buffers = new();
     private readonly MessageSource _source;
 
     public SourceBuffers(MessageSource source)
@@ -13,7 +13,7 @@ public class SourceBuffers
         _source = source;
     }
 
-    public MessageBuffer GetBuffer(SourcePartitionKey key)
+    public MessageBuffer GetBuffer(string key)
     {
         return _buffers.GetOrAdd(key, k =>
         {

@@ -2,5 +2,5 @@
 
 public interface ISourceHandlerFactory
 {
-    ISourceHandler CreateHandler(SourcePartitionKey key);
+    ISourceHandler CreateHandler(string key);
 }
