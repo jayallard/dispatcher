@@ -20,7 +20,6 @@ public class MessageEnvelope
         Headers = headers.ToImmutableDictionary(OrdinalIgnoreCase);
     }
 
-    public string SourceId { get; internal set; }
     public MessageOrigin Origin { get; }
     public string MessageType { get; }
     public byte[] Key { get; }

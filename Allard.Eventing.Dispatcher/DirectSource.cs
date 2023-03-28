@@ -16,7 +16,7 @@ public class DirectSource : IPartitionedSource
             .Enqueue(message);
     }
 
-    private int _last = 0;
+    private int _last;
 
     public async Task<MessageEnvelope?> Get(CancellationToken cancellationToken = default)
     {
