@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher;
 using static Allard.Eventing.Abstractions.MessageEnvelopeBuilder;
 

@@ -1,4 +1,4 @@
-﻿namespace Allard.Eventing.Abstractions;
+﻿namespace Allard.Eventing.Abstractions.Source;
 
 public interface ISource
 {

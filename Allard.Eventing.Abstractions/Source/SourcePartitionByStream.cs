@@ -1,4 +1,4 @@
-﻿namespace Allard.Eventing.Abstractions;
+﻿namespace Allard.Eventing.Abstractions.Source;
 
 /// <summary>
 /// Partition by the stream id.

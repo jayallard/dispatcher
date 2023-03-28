@@ -1,6 +1,4 @@
-﻿using Allard.Eventing.Abstractions.Unit.Tests;
-
-namespace Allard.Eventing.Abstractions;
+﻿namespace Allard.Eventing.Abstractions;
 
 public class PartitionKeyBuilder
 {

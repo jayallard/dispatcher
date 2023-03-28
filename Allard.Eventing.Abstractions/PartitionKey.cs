@@ -1,3 +1,3 @@
-﻿namespace Allard.Eventing.Abstractions.Unit.Tests;
+﻿namespace Allard.Eventing.Abstractions;
 
 public record PartitionKey(PartitionKeyField[] Fields);
