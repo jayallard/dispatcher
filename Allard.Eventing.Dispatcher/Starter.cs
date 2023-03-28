@@ -1,12 +1,12 @@
 ﻿namespace Allard.Eventing.Dispatcher;
 
-public class Starter
+public static class Starter
 {
-    private int _isStarted;
-
-    public void Start()
+    public static void EnsureCanStart(ref int isStarted)
     {
-        if (Interlocked.CompareExchange(ref _isStarted, 1, 0) == 1)
+        // returns the original value. if the original value was 1, then the
+        // service is already started.
+        if (Interlocked.CompareExchange(ref isStarted, 1, 0) == 1)
         {
             throw new InvalidOperationException("The buffer is already started");
         }

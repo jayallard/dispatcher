@@ -11,11 +11,11 @@ public class MessageDispatcher
         _sources = sources.ToArray();
     }
 
-    private readonly Starter _starter = new();
+    private int _isStarted;
 
     public async Task Start(CancellationToken stoppingToken)
     {
-        _starter.Start();
+        Starter.EnsureCanStart(ref _isStarted);
         await Task.Yield();
 
         _readers = _sources

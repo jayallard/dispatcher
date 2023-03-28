@@ -5,7 +5,7 @@ namespace Allard.Eventing.Dispatcher;
 public class SourceReader
 {
     private readonly MessageSource _source;
-    private readonly Starter _starter = new();
+    private int _isStarted;
     private readonly SourceBuffers _buffers;
 
     public SourceReader(MessageSource source)
@@ -18,7 +18,7 @@ public class SourceReader
 
     public async Task Start(CancellationToken stoppingToken)
     {
-        _starter.Start();
+        Starter.EnsureCanStart(ref _isStarted);
         await Task.Yield();
         while (!stoppingToken.IsCancellationRequested)
         {

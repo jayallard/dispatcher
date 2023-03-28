@@ -28,10 +28,10 @@ public class MessageBuffer
     }
 
     public int Count { get; private set; }
-    private readonly Starter _starter = new();
+    private int _isStarted;
     public async Task Start(CancellationToken stoppingToken)
     {
-        _starter.Start();
+        Starter.EnsureCanStart(ref _isStarted);
         await Task.Yield();
         while (!stoppingToken.IsCancellationRequested)
         {
