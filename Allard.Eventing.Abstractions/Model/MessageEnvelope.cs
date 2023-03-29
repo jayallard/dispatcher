@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using static System.StringComparer;
 
-namespace Allard.Eventing.Abstractions;
+namespace Allard.Eventing.Abstractions.Model;
 
 public class MessageEnvelope
 {

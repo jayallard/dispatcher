@@ -1,4 +1,6 @@
-﻿namespace Allard.Eventing.Abstractions.Source;
+﻿using Allard.Eventing.Abstractions.Model;
+
+namespace Allard.Eventing.Abstractions.Source;
 
 public interface ISourceHandler
 {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Allard.Eventing.Abstractions.Model;
 using static System.Text.Encoding;
 
 namespace Allard.Eventing.Abstractions;

@@ -1,46 +1,40 @@
 using System.Diagnostics;
 using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher;
-using static Allard.Eventing.Abstractions.MessageEnvelopeBuilder;
+using Allard.Eventing.TestApp;
 
-// var host = Host.CreateDefaultBuilder(args)
-//     .ConfigureServices(services =>
-//     {
-//         services
-//             .AddHostedService<Worker>()
-//             .AddSingleton<MessageDispatcher>()
-//             .AddSingleton<ISubscriberConsumerFactory, SubscriberConsumerFactoryDi>();
-//     })
-//     .Build();
-const int sendCount = 10_000_000;
+var source = new DirectSource();
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices(services =>
+    {
+        services
+            .AddHostedService<Worker>()
+            .SetupDispatcher(d =>
+            {
+                d.AddSource("source1", s =>
+                {
+                    s
+                        .SetSource(source)
+                        .SetPartitioner<PartitionByStreamId>()
+                        .AddSubscriber<DemoSubscribers1>()
+                        .AddSubscriber<DemoSubscribers2>();
+                });
+            });
+    })
+    .Build();
+
+const int sendCount = 100;
 var counter = new CountdownEvent(sendCount);
-var sources = new[]
-{
-    new MessageSource(
-        "uno", 
-        _ =>
-        {
-            counter.Signal();
-            // if (counter.CurrentCount % 100_000 == 0)
-            // {
-            //     Console.WriteLine(counter.CurrentCount);
-            // }
 
-            return Task.CompletedTask;
-        }, 
-        new DirectSource(),
-        new SourcePartitionByStream())
-};
-
-var messageA = CreateMessage("a")
+var messageA = MessageEnvelopeBuilder.CreateMessage("a")
     .SetKey("key")
     .SetMessage("hi there")
     .SetOrigin("test", "test", 1)
     .Build();
 
 var writeWatch = Stopwatch.StartNew();
-var source = (DirectSource)sources[0].Source;
 for (var i = 0; i < sendCount; i++)
 {
     source.Send(messageA);
@@ -49,7 +43,7 @@ for (var i = 0; i < sendCount; i++)
 writeWatch.Stop();
 
 var cancellationSource = new CancellationTokenSource();
-var dispatcher = new MessageDispatcher(sources);
+var dispatcher = host.Services.GetRequiredService<MessageDispatcher2>();
 
 var readWatch = Stopwatch.StartNew();
 var runner = dispatcher.Start(cancellationSource.Token);
@@ -60,3 +54,38 @@ readWatch.Stop();
 Console.WriteLine("Write Time: " + writeWatch.ElapsedMilliseconds.ToString("#,###"));
 Console.WriteLine("Read Time: " + readWatch.ElapsedMilliseconds.ToString("#,###"));
 await runner;
+
+namespace Allard.Eventing.TestApp
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection SetupDispatcher(this IServiceCollection services, Action<DispatcherSetup> setup)
+        {
+            var s = new DispatcherSetup();
+            setup(s);
+            return
+                services
+                    .AddSingleton<MessageDispatcher2>(sp => ActivatorUtilities.CreateInstance<MessageDispatcher2>(sp, s));
+        }
+    }
+
+    public class DemoSubscribers1 : ISubscriberMarker
+    {
+        [MessageHandler("a")]
+        public Task Blah(MessageContext context, MessageEnvelope env)
+        {
+            Console.WriteLine("a");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class DemoSubscribers2 : ISubscriberMarker
+    {
+        [MessageHandler("a")]
+        public Task Blah(MessageContext context)
+        {
+            Console.WriteLine("b");
+            return Task.CompletedTask;
+        }
+    }
+}

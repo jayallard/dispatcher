@@ -1,4 +1,5 @@
 ﻿using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Dispatcher.ParameterExtractors;
 using FluentAssertions;
 using static Allard.Eventing.Dispatcher.Unit.Tests.ParameterExtractors.TestClasses;
@@ -34,7 +35,7 @@ public class TestClasses
 
 
 
-    public class MessageContextHandler
+    public class MessageContextHandler : ISubscriberMarker
     {
         [MessageHandler("abc")]
         public Task MessageContext(MessageContext mc)
@@ -43,7 +44,7 @@ public class TestClasses
         }
     }
 
-    public class MessageEnvelopeHandler
+    public class MessageEnvelopeHandler: ISubscriberMarker
     {
         [MessageHandler("abc")]
         public Task MessageEnvelope(MessageEnvelope e)
@@ -52,7 +53,7 @@ public class TestClasses
         }
     }
 
-    public class MessageOriginHandler
+    public class MessageOriginHandler: ISubscriberMarker
     {
         [MessageHandler("abc")]
         public Task MessageEnvelope(MessageOrigin e)

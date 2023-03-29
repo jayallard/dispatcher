@@ -1,4 +1,6 @@
-﻿namespace Allard.Eventing.Abstractions;
+﻿using Allard.Eventing.Abstractions.Model;
+
+namespace Allard.Eventing.Abstractions;
 
 public static class ExtensionMethods
 {

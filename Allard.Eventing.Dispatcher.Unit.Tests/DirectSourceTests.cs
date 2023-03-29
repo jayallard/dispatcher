@@ -1,4 +1,5 @@
 ﻿using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Model;
 using FluentAssertions;
 
 namespace Allard.Eventing.Dispatcher.Unit.Tests;

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Model;
 
 namespace Allard.Eventing.Dispatcher.ParameterExtractors;
 

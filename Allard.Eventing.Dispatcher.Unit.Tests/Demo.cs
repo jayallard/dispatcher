@@ -6,7 +6,7 @@ namespace Allard.Eventing.Dispatcher.Unit.Tests;
 
 public class Demo
 {
-    private string[] _items = new string[] { "a", "b", "c" };
+    private string[] _items = { "a", "b", "c" };
 
     [Fact]
     public void Swap()
@@ -34,17 +34,6 @@ public class Demo
 
         var next = Interlocked.CompareExchange(ref x, 1, 0);
         next.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task Junk()
-    {
-        var source = Channel.CreateBounded<string>(10);
-        var target = Channel.CreateBounded<string>(5);
-        for (var i = 0; i < 10; i++)
-        {
-            await source.Writer.WriteAsync(i.ToString());
-        }
     }
 
     /// <summary>

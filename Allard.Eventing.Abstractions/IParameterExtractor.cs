@@ -1,8 +1,8 @@
-﻿using System.Reflection;
+﻿using Allard.Eventing.Abstractions.Model;
 
 namespace Allard.Eventing.Abstractions;
 
 public interface IParameterExtractor
 {
-    object ExtractParameter(ParameterInfo parameter, MessageContext messageContext);
+    object ExtractParameter(MessageContext messageContext);
 }

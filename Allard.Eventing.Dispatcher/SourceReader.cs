@@ -1,26 +1,36 @@
 ﻿using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 
 namespace Allard.Eventing.Dispatcher;
 
+/// <summary>
+/// Retrieves messages from a source, and publishes
+/// them to a buffer.
+/// </summary>
 public class SourceReader
 {
-    private readonly MessageSource _source;
+    private readonly MessageBuffers _buffers;
+    private readonly IMessagePartitioner _partitioner;
     private int _isStarted;
-    private readonly SourceBuffers _buffers;
-
-    public SourceReader(MessageSource source)
-    {
-        _source = source;
-        _buffers = new SourceBuffers(source);
-    }
-
     private SpinWait _spinner;
+    private MessageSource _source;
 
-    public async Task Start(CancellationToken stoppingToken)
+    public SourceReader(
+        MessageBuffers buffers, 
+        IMessagePartitioner partitioner)
+    {
+        _buffers = buffers;
+        _partitioner = partitioner;
+    }
+    
+    public async Task Start(
+        MessageSource source,
+        CancellationToken stoppingToken)
     {
         Starter.EnsureCanStart(ref _isStarted);
         await Task.Yield();
+        _source = source;
         while (!stoppingToken.IsCancellationRequested)
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -32,9 +42,9 @@ public class SourceReader
                     continue;
                 }
 
-                var key = _source.Partitioner.GetSourcePartitionKey(message);
+                var key = _partitioner.GetPartitionKey(message);
                 var buffer = _buffers.GetBuffer(key);
-                buffer.Add(new MessageContext(message));
+                buffer.Add(new MessageContext(message, _source.Id));
             }
         }
     }

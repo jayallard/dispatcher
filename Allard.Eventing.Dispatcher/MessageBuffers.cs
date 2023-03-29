@@ -1,16 +1,16 @@
 ﻿using System.Collections.Concurrent;
-using Allard.Eventing.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Allard.Eventing.Dispatcher;
 
-public class SourceBuffers
+public class MessageBuffers
 {
     private readonly ConcurrentDictionary<string, Lazy<MessageBufferTask>> _buffers = new();
-    private readonly MessageSource _source;
+    private readonly IServiceProvider _serviceProvider;
 
-    public SourceBuffers(MessageSource source)
+    public MessageBuffers(IServiceProvider serviceProvider)
     {
-        _source = source;
+        _serviceProvider = serviceProvider;
     }
 
     public MessageBuffer GetBuffer(string key)
@@ -19,12 +19,10 @@ public class SourceBuffers
         {
             return new Lazy<MessageBufferTask>(() =>
             {
-                var handler = _source.Handler.CreateHandler(key);
-                var buffer = new MessageBuffer(handler);
+                var buffer = _serviceProvider.GetRequiredService<MessageBuffer>();
                 var cancellationSource = new CancellationTokenSource();
                 var runner = buffer.Start(cancellationSource.Token);
-                var task = new MessageBufferTask(buffer, runner, cancellationSource);
-                return task;
+                return new MessageBufferTask(buffer, runner, cancellationSource);
             });
         }).Value.Buffer;
     }
