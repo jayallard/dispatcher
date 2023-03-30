@@ -18,8 +18,9 @@ public class MessageDispatcher2
 
     public async Task Start(CancellationToken stoppingToken)
     {
-        Starter.EnsureCanStart(ref _isStarted);
-        _readers = _setup.Sources
+        Starter.Start(ref _isStarted);
+        _readers = _setup
+            .Sources
             .Select(s =>
             {
                 var subscriberTypes = new SourceConfig(s.SubscriberTypes.ToImmutableArray());

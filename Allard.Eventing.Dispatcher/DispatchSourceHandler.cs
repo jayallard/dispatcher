@@ -1,10 +1,8 @@
 ﻿using System.Collections.Immutable;
-using Allard.Eventing.Abstractions;
 using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher.ParameterExtractors;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Allard.Eventing.Dispatcher;
 
@@ -14,7 +12,9 @@ public class DispatchSourceHandler : ISourceHandler
     private readonly ImmutableDictionary<string, ImmutableArray<SingleMessageHandlerMethod>> _subscribersByMessageType;
     private int _received;
 
-    public DispatchSourceHandler(IServiceProvider serviceProvider, SourceConfig sourceConfig)
+    public DispatchSourceHandler(
+        IServiceProvider serviceProvider, 
+        SourceConfig sourceConfig)
     {
         _subscribersByMessageType = sourceConfig
             .SubscriberTypes
@@ -26,7 +26,6 @@ public class DispatchSourceHandler : ISourceHandler
         _serviceProvider = serviceProvider;
     }
     
-
     public async Task Handle(MessageContext message, CancellationToken cancellationToken)
     {
         Console.WriteLine("received " + _received++);
@@ -42,4 +41,3 @@ public class DispatchSourceHandler : ISourceHandler
         }
     }
 }
-

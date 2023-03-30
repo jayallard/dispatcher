@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Allard.Eventing.Abstractions;
 using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 
@@ -31,7 +30,7 @@ public class MessageBuffer
     private int _isStarted;
     public async Task Start(CancellationToken stoppingToken)
     {
-        Starter.EnsureCanStart(ref _isStarted);
+        Starter.Start(ref _isStarted);
         await Task.Yield();
         while (!stoppingToken.IsCancellationRequested)
         {

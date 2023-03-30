@@ -10,7 +10,7 @@ public static class Starter
     /// </summary>
     /// <param name="isStarted"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    public static void EnsureCanStart(ref int isStarted)
+    public static void Start(ref int isStarted)
     {
         // returns the original value. if the original value was 1, then the
         // service is already started.

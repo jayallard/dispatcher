@@ -28,7 +28,7 @@ public class SourceReader
         MessageSource source,
         CancellationToken stoppingToken)
     {
-        Starter.EnsureCanStart(ref _isStarted);
+        Starter.Start(ref _isStarted);
         await Task.Yield();
         _source = source;
         while (!stoppingToken.IsCancellationRequested)
