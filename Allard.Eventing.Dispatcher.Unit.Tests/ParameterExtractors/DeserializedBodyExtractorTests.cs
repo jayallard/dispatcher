@@ -19,7 +19,7 @@ public class DeserializedBodyExtractorTests
             .CreateMessage("a")
             .SetMessage(json)
             .Build();
-        var messageContext = new MessageContext(message, "source 1");
+        var messageContext = new MessageContext(message, "source 1", Substitute.For<IServiceProvider>());
         var paramInfo = Substitute.For<ParameterInfo>();
         paramInfo.ParameterType.Returns(typeof(Junk));
         var bodyExtractor = new DeserializedBodyExtractor(paramInfo);

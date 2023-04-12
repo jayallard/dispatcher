@@ -23,7 +23,7 @@ public class MessageDispatcher2
             .Sources
             .Select(s =>
             {
-                var subscriberTypes = new SourceConfig(s.SubscriberTypes.ToImmutableArray());
+                var subscriberTypes = new SourceConfig(s.Id, s.SubscriberTypes.ToImmutableArray());
                 s.Services.AddSingleton(subscriberTypes);
                 var services = s.Services.BuildServiceProvider();
                 var cancellation = new CancellationTokenSource();

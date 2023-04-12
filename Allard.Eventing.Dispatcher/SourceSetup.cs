@@ -1,6 +1,5 @@
 ﻿using Allard.Eventing.Abstractions.Source;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Allard.Eventing.Dispatcher;
 
@@ -50,7 +49,7 @@ public class SourceSetup
     /// <returns></returns>
     public SourceSetup SetSource<T>() where T : class, ISource
     {
-        Services.AddScoped<ISource, T>();
+        Services.AddSingleton<ISource, T>();
         return this;
     }
 

@@ -2,4 +2,4 @@
 
 namespace Allard.Eventing.Dispatcher;
 
-public record SourceConfig(ImmutableArray<Type> SubscriberTypes);
+public record SourceConfig(string SourceId, ImmutableArray<Type> SubscriberTypes);

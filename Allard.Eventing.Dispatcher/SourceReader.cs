@@ -44,7 +44,7 @@ public class SourceReader
 
                 var key = _partitioner.GetPartitionKey(message);
                 var buffer = _buffers.GetBuffer(key);
-                buffer.Add(new MessageContext(message, _source.Id));
+                buffer.AddMessage(message);
             }
         }
     }

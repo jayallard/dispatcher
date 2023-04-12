@@ -4,5 +4,7 @@ namespace Allard.Eventing.Abstractions.Source;
 
 public interface ISourceHandler
 {
-    Task Handle(MessageContext message, CancellationToken cancellationToken);
+    Task HandleCommand(HandlerCommand command);
+    
+    Task HandleMessage(MessageEnvelope message, CancellationToken cancellationToken);
 }

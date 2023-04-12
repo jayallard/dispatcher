@@ -12,6 +12,9 @@ public class MessageBuffers
     {
         _serviceProvider = serviceProvider;
     }
+    
+    // TODO: every key gets its own buffer... that'll be too many buffers.
+    // need to limit the number of buffers
 
     public MessageBuffer GetBuffer(string key)
     {

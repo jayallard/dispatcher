@@ -19,7 +19,7 @@ public static class ExtractorFactory
         return method.GetParameters().Select(GetExtractor);
     }
 
-    public static IParameterExtractor GetExtractor(ParameterInfo parameter)
+    private static IParameterExtractor GetExtractor(ParameterInfo parameter)
     {
         if (parameter.ParameterType == typeof(MessageContext))
         {
@@ -36,6 +36,6 @@ public static class ExtractorFactory
             return MessageOriginExtractor;
         }
 
-        throw new InvalidOperationException("unhandled parameter type: " + parameter.ParameterType.FullName);
+        return new ServiceExtractor(parameter.ParameterType);
     }
 }

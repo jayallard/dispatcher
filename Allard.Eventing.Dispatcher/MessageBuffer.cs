@@ -7,10 +7,11 @@ namespace Allard.Eventing.Dispatcher;
 public class MessageBuffer
 {
     private readonly ISourceHandler _handler;
-    private readonly ConcurrentQueue<MessageContext> _messages = new();
+    private readonly ConcurrentQueue<MessageEnvelope> _messages = new();
+    private readonly ConcurrentQueue<HandlerCommand> _commands = new();
     private readonly ManualResetEventSlim _blocker = new();
 
-    private static int Capacity => 100;
+    private static int Capacity => 100; 
 
     public bool IsFull => _messages.Count >= Capacity;
 
@@ -21,9 +22,15 @@ public class MessageBuffer
         _handler = handler;
     }
 
-    public void Add(MessageContext message)
+    public void AddMessage(MessageEnvelope message)
     {
         _messages.Enqueue(message);
+        _blocker.Set();
+    }
+
+    public void AddCommand(HandlerCommand command)
+    {
+        _commands.Enqueue(command);
         _blocker.Set();
     }
 
@@ -36,9 +43,14 @@ public class MessageBuffer
         {
             try
             {
+                if (_commands.TryDequeue(out var command))
+                {
+                    await _handler.HandleCommand(command);
+                }
+                
                 if (_messages.TryDequeue(out var message))
                 {
-                    await _handler.Handle(message, stoppingToken);
+                    await _handler.HandleMessage(message, stoppingToken);
                     continue;
                 }
 
