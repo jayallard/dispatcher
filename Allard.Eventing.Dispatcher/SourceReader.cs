@@ -1,5 +1,4 @@
 ﻿using Allard.Eventing.Abstractions;
-using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 
 namespace Allard.Eventing.Dispatcher;
@@ -12,16 +11,20 @@ public class SourceReader
 {
     private readonly MessageBuffers _buffers;
     private readonly IMessagePartitioner _partitioner;
+    private readonly ISourcePartitionTracker _tracker;
+    
     private int _isStarted;
     private SpinWait _spinner;
     private MessageSource _source;
 
     public SourceReader(
         MessageBuffers buffers, 
-        IMessagePartitioner partitioner)
+        IMessagePartitioner partitioner, 
+        ISourcePartitionTracker tracker)
     {
         _buffers = buffers;
         _partitioner = partitioner;
+        _tracker = tracker;
     }
     
     public async Task Start(
@@ -45,6 +48,7 @@ public class SourceReader
                 var key = _partitioner.GetPartitionKey(message);
                 var buffer = _buffers.GetBuffer(key);
                 buffer.AddMessage(message);
+                _tracker.Start(message.Origin);
             }
         }
     }

@@ -34,7 +34,7 @@ public class SingleMessageHandlerMethodTests
         // act
         // -------------------------------------------------
         var envelope = MessageEnvelopeBuilder
-            .CreateMessage("atc")
+            .CreateMessage("abc")
             .Build();
         var context = new MessageContext(envelope, "source", services);
         var instance = new ExtractorTest1();

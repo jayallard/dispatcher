@@ -35,7 +35,7 @@ public class DispatchSourceHandler : ISourceHandler
 
     public async Task HandleMessage(MessageEnvelope message, CancellationToken cancellationToken)
     {
-        Console.WriteLine("received " + _received++);
+        // Console.WriteLine("received " + _received++);
         if (!_subscribersByMessageType.TryGetValue(message.MessageType, out var subscribers))
         {
             return;

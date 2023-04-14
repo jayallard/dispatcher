@@ -1,4 +1,5 @@
-﻿using Allard.Eventing.Abstractions.Source;
+﻿using Allard.Eventing.Abstractions;
+using Allard.Eventing.Abstractions.Source;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Allard.Eventing.Dispatcher;
@@ -22,11 +23,18 @@ public class SourceSetup
     /// </summary>
     public IServiceCollection Services { get; } = new ServiceCollection()
         .AddLogging()
+        .AddSingleton<ISourcePartitionTracker, SequenceSourcePartitionTracker>()
         .AddSingleton<ISourceHandler, DispatchSourceHandler>()
         .AddSingleton<SourceReader>()
         .AddSingleton<MessageBuffers>()
         .AddSingleton<IMessagePartitioner, PartitionByStreamId>()
         .AddTransient<MessageBuffer>();
+
+    public SourceSetup AddService(Action<IServiceCollection> services)
+    {
+        services(Services);
+        return this;
+    }
 
     /// <summary>
     /// Gets the Id of this source.

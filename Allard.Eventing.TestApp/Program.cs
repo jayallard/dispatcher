@@ -5,17 +5,21 @@ using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher;
 using Allard.Eventing.TestApp;
 
+const int sendCount = 10_000;
 var source = new DirectSource();
+var countdown = new CountdownEvent(sendCount);
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
         services
+            .AddSingleton(countdown)
             .AddHostedService<Worker>()
             .SetupDispatcher(d =>
             {
                 d.AddSource("source1", s =>
                 {
                     s
+                        .AddService(sp => sp.AddSingleton(countdown))
                         .SetSource(source)
                         .SetPartitioner<PartitionByStreamId>()
                         .AddSubscriber<DemoSubscribers1>()
@@ -25,18 +29,15 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-const int sendCount = 100;
-var counter = new CountdownEvent(sendCount);
-
-var messageA = MessageEnvelopeBuilder.CreateMessage("a")
-    .SetKey("key")
-    .SetMessage("hi there")
-    .SetOrigin("test", "test", 1)
-    .Build();
-
 var writeWatch = Stopwatch.StartNew();
 for (var i = 0; i < sendCount; i++)
 {
+    var messageA = MessageEnvelopeBuilder.CreateMessage("a")
+        .SetKey("key")
+        .SetMessage("hi there")
+        .SetOrigin("test", "test", i)
+        .Build();
+    
     source.Send(messageA);
 }
 
@@ -48,6 +49,8 @@ var dispatcher = host.Services.GetRequiredService<MessageDispatcher2>();
 var readWatch = Stopwatch.StartNew();
 var runner = dispatcher.Start(cancellationSource.Token);
 
+
+var counter = host.Services.GetRequiredService<CountdownEvent>();
 counter.Wait();
 readWatch.Stop();
 
@@ -71,10 +74,18 @@ namespace Allard.Eventing.TestApp
 
     public class DemoSubscribers1 : ISubscriberMarker
     {
+        private readonly CountdownEvent _counter;
+
+        public DemoSubscribers1(CountdownEvent counter)
+        {
+            _counter = counter;
+        }
+
         [MessageHandler("a")]
         public Task Blah(MessageContext context, MessageEnvelope env)
         {
-            Console.WriteLine("a");
+            _counter.Signal();
+            // Console.WriteLine("a");
             return Task.CompletedTask;
         }
     }
@@ -84,7 +95,7 @@ namespace Allard.Eventing.TestApp
         [MessageHandler("a")]
         public Task Blah(MessageContext context)
         {
-            Console.WriteLine("b");
+            // Console.WriteLine("b");
             return Task.CompletedTask;
         }
     }
