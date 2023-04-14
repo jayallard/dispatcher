@@ -9,6 +9,11 @@ public class MessageDispatcher2
     private readonly DispatcherSetup _setup;
     private SourceReaderTask[]? _readers;
 
+    public IEnumerable<SourceReaderTask> Readers => _readers == null
+        ? Array.Empty<SourceReaderTask>()
+        : _readers.AsReadOnly();
+
+
     public MessageDispatcher2(DispatcherSetup setup)
     {
         _setup = setup;
@@ -34,6 +39,15 @@ public class MessageDispatcher2
             })
             .ToArray();
 
+        stoppingToken.Register(() =>
+        {
+            Console.WriteLine("=======token canceled");
+            foreach (var reader in _readers)
+            {
+                reader.CancellationTokenSource.Cancel();
+            }
+        });
+        
         await Task.WhenAll(_readers.Select(s => s.Runner));
     }
 }

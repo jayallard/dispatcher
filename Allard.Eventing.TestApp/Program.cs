@@ -5,7 +5,7 @@ using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher;
 using Allard.Eventing.TestApp;
 
-const int sendCount = 10_000;
+const int sendCount = 20_000;
 var source = new DirectSource();
 var countdown = new CountdownEvent(sendCount);
 var host = Host.CreateDefaultBuilder(args)
@@ -56,7 +56,16 @@ readWatch.Stop();
 
 Console.WriteLine("Write Time: " + writeWatch.ElapsedMilliseconds.ToString("#,###"));
 Console.WriteLine("Read Time: " + readWatch.ElapsedMilliseconds.ToString("#,###"));
+
+var reader = host.Services.GetRequiredService<MessageDispatcher2>().Readers.Single();
+var tracker = reader.services.GetRequiredService<ISourcePartitionTracker>();
+var complete = tracker.GetComplete().Count();
+Console.WriteLine("Tracker complete: " + complete);
+
+Console.WriteLine("--- stop");
+cancellationSource.Cancel();
 await runner;
+
 
 namespace Allard.Eventing.TestApp
 {

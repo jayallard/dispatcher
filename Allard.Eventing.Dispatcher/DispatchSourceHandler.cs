@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Allard.Eventing.Abstractions;
 using Allard.Eventing.Abstractions.Model;
 using Allard.Eventing.Abstractions.Source;
 using Allard.Eventing.Dispatcher.ParameterExtractors;
@@ -8,14 +9,15 @@ namespace Allard.Eventing.Dispatcher;
 
 public class DispatchSourceHandler : ISourceHandler
 {
+    private readonly ISourcePartitionTracker _tracker;
     private readonly IServiceProvider _serviceProvider;
     private readonly ImmutableDictionary<string, ImmutableArray<SingleMessageHandlerMethod>> _subscribersByMessageType;
-    private int _received;
     private readonly SourceConfig _config;
 
     public DispatchSourceHandler(
         IServiceProvider serviceProvider,
-        SourceConfig sourceConfig)
+        SourceConfig sourceConfig, 
+        ISourcePartitionTracker tracker)
     {
         _subscribersByMessageType = sourceConfig
             .SubscriberTypes
@@ -26,6 +28,7 @@ public class DispatchSourceHandler : ISourceHandler
             .ToImmutableDictionary();
         _serviceProvider = serviceProvider;
         _config = sourceConfig;
+        _tracker = tracker;
     }
 
     public Task HandleCommand(HandlerCommand command)
@@ -47,5 +50,7 @@ public class DispatchSourceHandler : ISourceHandler
             var context = new MessageContext(message, _config.SourceId, _serviceProvider);
             await sub.Execute(context, handler);
         }
+        
+        _tracker.Complete(message.Origin);
     }
 }
